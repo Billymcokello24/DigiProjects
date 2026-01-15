@@ -1,0 +1,493 @@
+<script setup>
+import { ref, computed } from 'vue'
+import BaseCard from '@/components/ui/BaseCard.vue'
+import BaseTable from '@/components/ui/BaseTable.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
+import BaseInput from '@/components/ui/BaseInput.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+
+const selectedCounty = ref(null)
+const selectedFilter = ref('All')
+
+// Mock aggregated data
+const regionalStats = [
+  { region: 'Coast', activeProjects: 12, completion: 78, lastUpdate: '2 hours ago', status: 'success' },
+  { region: 'Nairobi', activeProjects: 45, completion: 92, lastUpdate: '10 mins ago', status: 'success' },
+  { region: 'Rift Valley', activeProjects: 34, completion: 65, lastUpdate: '1 day ago', status: 'warning' },
+  { region: 'Central', activeProjects: 28, completion: 88, lastUpdate: '5 hours ago', status: 'success' },
+  { region: 'Nyanza', activeProjects: 18, completion: 70, lastUpdate: '3 hours ago', status: 'success' },
+  { region: 'Western', activeProjects: 15, completion: 60, lastUpdate: '1 day ago', status: 'neutral' },
+  { region: 'Eastern', activeProjects: 22, completion: 75, lastUpdate: '4 hours ago', status: 'success' },
+  { region: 'North Eastern', activeProjects: 8, completion: 50, lastUpdate: '2 days ago', status: 'warning' },
+]
+
+// Mock County Profiles
+const countyProfiles = {
+  'Mombasa': {
+    name: 'Mombasa County',
+    officer: 'Officer J. Doe',
+    description: 'Mombasa is a coastal city in southeastern Kenya along the Indian Ocean. It is the country’s oldest and second-largest city. Our ICT focus is on enhancing connectivity for tourism and maritime logistics.',
+    stats: { projects: 12, completed: 8, budget: 'KSh 120M' },
+    imageGradient: 'linear-gradient(135deg, #0ea5e9, #bae6fd)'
+  },
+  'Nairobi': {
+    name: 'Nairobi City County',
+    officer: 'Officer M. Wanjiku',
+    description: 'Nairobi is the capital and largest city of Kenya. It is a regional hub for business and culture. We are leading the digital transformation with Smart City initiatives and widespread public Wi-Fi coverage.',
+    stats: { projects: 45, completed: 30, budget: 'KSh 450M' },
+    imageGradient: 'linear-gradient(135deg, #10b981, #a7f3d0)'
+  },
+  'Kisumu': {
+    name: 'Kisumu County',
+    officer: 'Officer A. Ochieng',
+    description: 'Kisumu is a Kenyan port city on Lake Victoria. It is an important link in the trade route between Lake Victoria and Mombasa. Our projects prioritize digital literacy and last-mile fiber connectivity.',
+    stats: { projects: 15, completed: 10, budget: 'KSh 150M' },
+    imageGradient: 'linear-gradient(135deg, #8b5cf6, #ddd6fe)'
+  }
+}
+
+const countyUpdates = [
+  { county: 'Mombasa', officer: 'Officer J. Doe', title: 'Public Wi-Fi Expansion', desc: 'Successfully launched 5 new hotspots in Likoni managed by local youth groups through Jitume. Usage has increased by 15% in the first week.', date: 'Oct 24, 2025' },
+  { county: 'Kisumu', officer: 'Officer A. Ochieng', title: 'Fiber Connectivity Last Mile', desc: 'Last mile connectivity completed for 3 TVET institutions, bringing total connected sites to 15. Pending activation from ISP.', date: 'Oct 23, 2025' },
+  { county: 'Nairobi', officer: 'Officer M. Wanjiku', title: 'Digital Hubs Operational', desc: 'Innovation hubs fully operational in Westlands, hosting 200+ daily users. Training programs for digital literacy have commenced.', date: 'Oct 22, 2025' },
+  { county: 'Turkana', officer: 'Officer K. Ekiru', title: 'Solar Powered Masts', desc: 'Installation of solar-powered masts in Lodwar completed to ensure 99.9% uptime for the county network backbone.', date: 'Oct 20, 2025' }
+]
+
+const availableCounties = Object.keys(countyProfiles)
+
+// Mock specific projects for each county
+const countyProjectData = {
+  'Mombasa': [
+    { name: 'Likoni Public Wi-Fi', phase: 'Phase 2', location: 'Likoni Ferry', completion: 100, status: 'success' },
+    { name: 'Changamwe Huduma Center', phase: 'Maintenance', location: 'Changamwe', completion: 95, status: 'success' },
+    { name: 'Mombasa Tech Hub', phase: 'Construction', location: 'CBD', completion: 45, status: 'warning' },
+    { name: 'Nyali Fiber Link', phase: 'Planning', location: 'Nyali', completion: 10, status: 'neutral' }
+  ],
+  'Nairobi': [
+    { name: 'CBD Free Wi-Fi', phase: 'Optimization', location: 'CBD', completion: 98, status: 'success' },
+    { name: 'Westlands Innovation Hub', phase: 'Operations', location: 'Westlands', completion: 100, status: 'success' },
+    { name: 'Kibera Digital Lab', phase: 'Phase 1', location: 'Kibera', completion: 80, status: 'success' },
+    { name: 'Eastleigh Fiber Ring', phase: 'Construction', location: 'Eastleigh', completion: 30, status: 'warning' }
+  ],
+  'Kisumu': [
+    { name: 'Kisumu Port Digitalization', phase: 'Phase 1', location: 'Port Area', completion: 85, status: 'success' },
+    { name: 'Maseno University Link', phase: 'Phase 2', location: 'Maseno', completion: 60, status: 'neutral' },
+    { name: 'Kondele Wi-Fi Zone', phase: 'Live', location: 'Kondele', completion: 100, status: 'success' }
+  ]
+}
+
+const currentTableData = computed(() => {
+  if (selectedCounty.value) {
+    return countyProjectData[selectedFilter.value] || []
+  }
+  return regionalStats
+})
+
+const selectCounty = (countyName) => {
+  selectedCounty.value = countyProfiles[countyName]
+  selectedFilter.value = countyName // For visual update
+}
+
+const clearSelection = () => {
+  selectedCounty.value = null
+  selectedFilter.value = 'All'
+}
+</script>
+
+<template>
+  <div class="public-data-view">
+    <div class="header-section">
+      <div class="container">
+         <h1 class="heading-1">Public Data Explorer</h1>
+         <p class="text-muted">Real-time transparency into National ICT Projects. Data uploaded directly by County Officers.</p>
+         
+         <div class="filter-bar">
+           <div class="filter-group">
+             <label>Filter by County:</label>
+             <select v-model="selectedFilter" @change="selectedFilter !== 'All' ? selectCounty(selectedFilter) : clearSelection()" class="custom-select">
+               <option value="All">All Regions</option>
+               <option v-for="county in availableCounties" :key="county" :value="county">{{ county }}</option>
+             </select>
+           </div>
+           
+           <BaseButton v-if="selectedCounty" @click="clearSelection" variant="secondary" size="sm">Clear Filter</BaseButton>
+         </div>
+      </div>
+    </div>
+
+    <!-- Specific County Profile (Conditional) -->
+    <section v-if="selectedCounty" class="county-profile-section">
+      <div class="container">
+        <div class="county-profile-card">
+          <div class="profile-header" :style="{ background: selectedCounty.imageGradient }">
+            <h2 class="profile-title">{{ selectedCounty.name }}</h2>
+          </div>
+          <div class="profile-body">
+            <div class="profile-info">
+              <p class="profile-desc">{{ selectedCounty.description }}</p>
+              <div class="profile-officer">
+                <span class="label">County Officer:</span>
+                <span class="value">{{ selectedCounty.officer }}</span>
+              </div>
+            </div>
+            <div class="profile-stats">
+              <div class="p-stat">
+                <div class="p-val">{{ selectedCounty.stats.projects }}</div>
+                <div class="p-label">Active Projects</div>
+              </div>
+              <div class="p-stat">
+                <div class="p-val">{{ selectedCounty.stats.completed }}</div>
+                <div class="p-label">Completed</div>
+              </div>
+              <div class="p-stat">
+                <div class="p-val">{{ selectedCounty.stats.budget }}</div>
+                <div class="p-label">Est. Budget</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Aggregated Stats / Detailed Projects Table -->
+    <section class="stats-section">
+      <div class="container">
+        <BaseCard :title="selectedCounty ? `Detailed Projects in ${selectedCounty.name}` : 'Regional Project Status'">
+          <table class="public-table">
+             <thead>
+               <!-- Regional Headers -->
+               <tr v-if="!selectedCounty">
+                 <th>Region</th>
+                 <th>Active Projects</th>
+                 <th>Completion</th>
+                 <th>Last Updated</th>
+                 <th>Overall Status</th>
+                 <th>Action</th>
+               </tr>
+               <!-- County Project Headers -->
+               <tr v-else>
+                 <th>Project Name</th>
+                 <th>Phase</th>
+                 <th>Location</th>
+                 <th>Completion</th>
+                 <th>Status</th>
+               </tr>
+             </thead>
+             <tbody>
+               <!-- Regional Data Rows -->
+               <template v-if="!selectedCounty">
+                 <tr v-for="stat in currentTableData" :key="stat.region">
+                   <td><strong>{{ stat.region }}</strong></td>
+                   <td>{{ stat.activeProjects }}</td>
+                   <td class="progress-cell">
+                     <div class="progress-bar">
+                       <div class="fill" :style="{ width: stat.completion + '%', backgroundColor: stat.completion < 60 ? 'var(--color-warning)' : 'var(--color-accent)' }"></div>
+                     </div>
+                     <span class="progress-text">{{ stat.completion }}%</span>
+                   </td>
+                   <td class="text-muted">{{ stat.lastUpdate }}</td>
+                   <td><StatusBadge :status="stat.status">On Track</StatusBadge></td>
+                   <td>
+                     <button class="link-btn" v-if="stat.region === 'Nairobi'" @click="selectCounty('Nairobi')">View Details</button>
+                     <button class="link-btn" v-else-if="stat.region === 'Coast'" @click="selectCounty('Mombasa')">View Details</button>
+                     <button class="link-btn" v-else-if="stat.region === 'Nyanza'" @click="selectCounty('Kisumu')">View Details</button>
+                     <span v-else class="text-muted text-sm">-</span>
+                   </td>
+                 </tr>
+               </template>
+
+               <!-- County Project Rows -->
+               <template v-else>
+                  <tr v-for="project in currentTableData" :key="project.name">
+                    <td><strong>{{ project.name }}</strong></td>
+                    <td>{{ project.phase }}</td>
+                    <td>{{ project.location }}</td>
+                    <td class="progress-cell">
+                     <div class="progress-bar">
+                       <div class="fill" :style="{ width: project.completion + '%', backgroundColor: project.completion < 60 ? 'var(--color-warning)' : 'var(--color-accent)' }"></div>
+                     </div>
+                     <span class="progress-text">{{ project.completion }}%</span>
+                   </td>
+                   <td><StatusBadge :status="project.status">{{ project.status === 'success' ? 'Active' : 'Ongoing' }}</StatusBadge></td>
+                  </tr>
+               </template>
+             </tbody>
+          </table>
+        </BaseCard>
+      </div>
+    </section>
+
+    <!-- County Descriptions / News Feed -->
+    <section class="county-news">
+      <div class="container">
+        <h2 class="heading-2 mb-4">Latest County Updates</h2>
+        <div class="news-grid">
+           <div v-for="(update, idx) in countyUpdates" :key="idx" class="news-card" v-show="!selectedCounty || update.county === selectedCounty.name">
+              <div class="news-header">
+                <span class="county-badge">{{ update.county }}</span>
+                <span class="news-date">{{ update.date }}</span>
+              </div>
+              <h3 class="news-title">{{ update.title }}</h3>
+              <p class="news-desc">{{ update.desc }}</p>
+              <div class="news-footer">
+                <span class="officer-name">Verified by: {{ update.officer }}</span>
+              </div>
+           </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</template>
+
+<style scoped>
+.public-data-view {
+  padding-bottom: 4rem;
+}
+
+.header-section {
+  padding: 4rem 0 2rem;
+  background: white;
+  text-align: center;
+}
+
+.stats-section {
+  padding: 2rem 0;
+}
+
+.public-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.public-table th, .public-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.public-table th {
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-background);
+}
+
+.progress-cell {
+  min-width: 150px;
+}
+
+.progress-bar {
+  display: inline-block;
+  width: 80px;
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 3px;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.progress-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.county-news {
+  padding: 2rem 0;
+}
+
+.mb-4 { margin-bottom: 1.5rem; }
+
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+}
+
+.news-card {
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  transition: 0.2s;
+}
+
+.news-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-accent);
+}
+
+.news-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.county-badge {
+  background: var(--color-primary-light);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  text-transform: uppercase;
+}
+
+.news-date {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.news-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 0.5rem;
+}
+
+.news-desc {
+  color: var(--color-text);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.news-footer {
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.filter-bar {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.filter-group {
+  text-align: left;
+}
+
+.filter-group label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.custom-select {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  font-family: inherit;
+  font-size: 1rem;
+  min-width: 200px;
+  background: white;
+}
+
+.county-profile-section {
+  padding-bottom: 2rem;
+}
+
+.county-profile-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
+}
+
+.profile-header {
+  padding: 3rem 2rem;
+  color: white;
+}
+
+.profile-title {
+  font-size: 2rem;
+  font-weight: 800;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.profile-body {
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 3rem;
+}
+
+.profile-desc {
+  font-size: 1.125rem;
+  color: var(--color-text);
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+.profile-officer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  background: var(--color-background);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+}
+
+.profile-officer .label {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.profile-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  border-left: 1px solid var(--color-border);
+  padding-left: 3rem;
+}
+
+.p-stat {
+  text-align: left;
+}
+
+.p-val {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.p-label {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-size: 0.875rem;
+}
+
+.link-btn:hover {
+  text-decoration: none;
+  color: var(--color-primary);
+}
+</style>
