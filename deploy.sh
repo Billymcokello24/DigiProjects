@@ -27,6 +27,23 @@ API_DOMAIN="$DOMAIN"
 # Logging
 LOG_FILE="/var/log/digiprojects-deploy.log"
 
+# Detect active PHP-FPM version/socket
+PHP_SOCKET=""
+if [ -d "/var/run/php" ]; then
+    for version in "8.4" "8.3" "8.2" "8.1" "8.0" "7.4"; do
+        if [ -S "/var/run/php/php${version}-fpm.sock" ]; then
+            PHP_SOCKET="/var/run/php/php${version}-fpm.sock"
+            break
+        fi
+    done
+    if [ -z "$PHP_SOCKET" ]; then
+        PHP_SOCKET=$(find /var/run/php/ -name "*fpm.sock" 2>/dev/null | head -n 1)
+    fi
+fi
+if [ -z "$PHP_SOCKET" ]; then
+    PHP_SOCKET="/var/run/php/php8.2-fpm.sock"
+fi
+
 log() {
     echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1" | tee -a $LOG_FILE
 }
@@ -396,6 +413,7 @@ NGINX_CONFIG
 
 # Replace hardcoded paths with dynamic PROJECT_PATH in Nginx config
 sed -i "s|/var/www/digiprojects|$PROJECT_PATH|g" /etc/nginx/sites-available/digiprojects
+sed -i "s|/var/run/php/php8.2-fpm.sock|$PHP_SOCKET|g" /etc/nginx/sites-available/digiprojects
 
 success "Unified Nginx config created"
 
