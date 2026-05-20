@@ -254,13 +254,13 @@ const generateCountyPDF = async () => {
           fontStyle: 'bold',
           fontSize: 8,
           cellPadding: 2.5,
-          font: 'Trebuchet MS'
+          font: 'helvetica'
         },
         bodyStyles: {
           textColor: colors.darkGray,
           fontSize: 7,
           cellPadding: 2,
-          font: 'Trebuchet MS'
+          font: 'helvetica'
         },
         alternateRowStyles: {
           fillColor: [245, 245, 245]
