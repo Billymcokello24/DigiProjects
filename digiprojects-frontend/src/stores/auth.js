@@ -5,7 +5,7 @@ import api from '@/api/axios'
 
 // Separate axios instance for non-API endpoints (like sanctum/csrf-cookie)
 const sanctum = axios.create({
-    baseURL: 'http://localhost:8000',
+    baseURL: '/sanctum',
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
@@ -38,14 +38,31 @@ export const useAuthStore = defineStore('auth', () => {
     // Real login function
     async function login(credentials) {
         try {
-            // Get CSRF token from Sanctum endpoint (outside /api prefix)
-            await sanctum.get('/sanctum/csrf-cookie')
+            // Get CSRF token from Sanctum endpoint (proxied to backend)
+            await sanctum.get('/csrf-cookie')
+
             // Then login with API
             const response = await api.post('/login', credentials)
-            user.value = response.data
+
+            // After login, confirm session by calling /user
+            try {
+                const userResp = await api.get('/user')
+                user.value = userResp.data
+            } catch (err) {
+                // If GET /user fails, clear user to be safe
+                user.value = null
+                console.error('Failed to confirm session after login:', err)
+                throw err
+            }
+
             return user.value
         } catch (error) {
+            // Surface validation errors (422) and others
             console.error('Login failed:', error)
+            if (error.response && error.response.status === 422) {
+                // return the server validation response for the UI to show
+                throw error.response.data
+            }
             throw error
         }
     }

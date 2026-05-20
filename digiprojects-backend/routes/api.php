@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 
 Route::get('/user', function (Request $request) {
     $user = $request->user();
@@ -18,12 +19,24 @@ Route::get('/user', function (Request $request) {
         ]);
     }
     return response()->json(null, 401);
-})->middleware('api_auth:sanctum');
+})->middleware('auth:sanctum');
 
-Route::get('/sanctum/csrf-cookie', function (Request $request) {
-    // Sanctum automatically sets the XSRF-TOKEN cookie when this route is accessed
-    // This endpoint is called by frontend before login to get the CSRF token
-    return response()->json(['message' => 'CSRF cookie set']);
+// Use Sanctum's CsrfCookieController so the XSRF-TOKEN cookie is set
+Route::get('/sanctum/csrf-cookie', [\Laravel\Sanctum\Http\Controllers\CsrfCookieController::class, 'show']);
+
+// Quick DB status endpoint to verify connection and row counts (publicly accessible for now)
+Route::get('/db-status', function () {
+    $driver = config('database.default');
+    $counts = [];
+    try {
+        $counts['users'] = DB::connection('mysql')->table('users')->count();
+        $counts['counties'] = DB::connection('mysql')->table('counties')->count();
+        $counts['submissions'] = DB::connection('mysql')->table('submissions')->count();
+    } catch (\Exception $e) {
+        return response()->json(['driver' => $driver, 'error' => $e->getMessage()], 500);
+    }
+
+    return response()->json(['driver' => $driver, 'counts' => $counts]);
 });
 
 // Public routes - no authentication required
@@ -36,10 +49,10 @@ Route::middleware([])->group(function () {
 });
 
 // Protected routes - require Sanctum authentication
-Route::middleware('api_auth:sanctum')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     // Projects & Phases - accessible to all authenticated users for dropdowns
     Route::get('/projects', [App\Http\Controllers\ProjectController::class, 'index']);
-    Route::get('/phases', [App\Http\Controllers\PhaseController::class, 'index']);    
+    Route::get('/phases', [App\Http\Controllers\PhaseController::class, 'index']);
     // County Officer Management (Admin only)
     Route::apiResource('users', App\Http\Controllers\UserController::class);
 
@@ -64,4 +77,20 @@ Route::middleware('api_auth:sanctum')->group(function () {
     Route::get('/submissions/{submission}', [App\Http\Controllers\SubmissionController::class, 'show']);
     Route::put('/submissions/{submission}', [App\Http\Controllers\SubmissionController::class, 'update']);
     Route::delete('/submissions/{submission}', [App\Http\Controllers\SubmissionController::class, 'destroy']);
+});
+
+Route::get('/debug/session', function (Request $request) {
+    $cookies = $request->cookies->all();
+    $headers = [];
+    foreach (['cookie', 'x-xsrf-token', 'x-csrf-token'] as $h) {
+        $headers[$h] = $request->header($h);
+    }
+
+    return response()->json([
+        'cookies' => $cookies,
+        'headers' => $headers,
+        'session_id' => $request->session()->getId(),
+        'session_driver' => config('session.driver'),
+        'is_authenticated' => (bool) $request->user(),
+    ]);
 });

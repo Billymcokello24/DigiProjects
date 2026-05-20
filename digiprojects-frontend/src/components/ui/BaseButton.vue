@@ -3,7 +3,7 @@ defineProps({
   variant: {
     type: String,
     default: 'primary', // primary, secondary, outline, ghost
-    validator: (value) => ['primary', 'secondary', 'outline', 'ghost'].includes(value)
+    validator: (value) => ['primary', 'secondary', 'outline', 'ghost', 'text'].includes(value)
   },
   size: {
     type: String,
@@ -91,6 +91,11 @@ defineProps({
 
 .variant-ghost:hover {
   background-color: rgba(0, 0, 0, 0.05);
+}
+
+.variant-text {
+  background-color: transparent;
+  color: var(--color-accent);
 }
 
 /* Sizes */

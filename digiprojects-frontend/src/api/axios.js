@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
+    baseURL: '/api', // use relative base so dev proxy will be applied
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
@@ -13,4 +13,3 @@ const api = axios.create({
 // No need for Bearer token interceptor for session auth
 
 export default api
-

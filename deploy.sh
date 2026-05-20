@@ -22,6 +22,7 @@ DB_NAME="digiprojects"
 DB_USER="digiprojects_user"
 APP_ENV="production"
 API_PATH="/api"
+API_DOMAIN="$DOMAIN"
 
 # Logging
 LOG_FILE="/var/log/digiprojects-deploy.log"
@@ -175,7 +176,7 @@ APP_NAME=DigiProjects
 APP_ENV=$APP_ENV
 APP_KEY=base64:CDqi4Lui0Vrlf1DtENOCMTftxEmWwqYx1yQ4EOJCgvI=
 APP_DEBUG=false
-APP_URL=https://$API_DOMAIN
+APP_URL=https://$DOMAIN
 
 APP_LOCALE=en
 APP_FALLBACK_LOCALE=en
