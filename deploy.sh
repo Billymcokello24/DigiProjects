@@ -330,13 +330,13 @@ server {
     }
 
     # API Location Block - Backend
-    location /api/ {
+    location /api {
         root /var/www/digiprojects/digiprojects-backend/public;
         try_files $uri $uri/ /index.php?$query_string;
     }
 
     # Sanctum Location Block - Backend (CSRF cookie auth)
-    location /sanctum/ {
+    location /sanctum {
         root /var/www/digiprojects/digiprojects-backend/public;
         try_files $uri $uri/ /index.php?$query_string;
     }
