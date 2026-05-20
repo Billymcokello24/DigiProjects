@@ -331,25 +331,29 @@ server {
 
     # API Location Block - Backend
     location /api/ {
-        # Change root to backend public directory
         root /var/www/digiprojects/digiprojects-backend/public;
-        
-        # Laravel routing - pass all requests to index.php
         try_files $uri $uri/ /index.php?$query_string;
-        
-        # PHP-FPM handler for API requests
-        location ~ \.php$ {
-            fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
-            fastcgi_index index.php;
-            fastcgi_param SCRIPT_FILENAME /var/www/digiprojects/digiprojects-backend/public$fastcgi_script_name;
-            include fastcgi_params;
-            fastcgi_param HTTPS on;
-            fastcgi_param HTTP_SCHEME https;
-        }
     }
 
-    # Frontend SPA routing - serve index.html for all non-API routes
-    location ~ ^/(?!api/) {
+    # Sanctum Location Block - Backend (CSRF cookie auth)
+    location /sanctum/ {
+        root /var/www/digiprojects/digiprojects-backend/public;
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # PHP-FPM handler for all PHP requests (including Laravel front controller)
+    location ~ \.php$ {
+        root /var/www/digiprojects/digiprojects-backend/public;
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_param HTTPS on;
+        fastcgi_param HTTP_SCHEME https;
+    }
+
+    # Frontend SPA routing - serve index.html for all non-API / non-PHP routes
+    location / {
         try_files $uri $uri/ /index.html;
         add_header Cache-Control "no-cache, no-store, must-revalidate";
     }
