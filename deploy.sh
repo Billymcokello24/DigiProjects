@@ -107,12 +107,10 @@ apt-get install -y -qq \
     php-xml \
     php-curl \
     php-zip \
-    php-pdo \
     php-gd \
     php-cli \
     php-common \
     php-bcmath \
-    php-json \
     composer \
     nodejs \
     npm \
