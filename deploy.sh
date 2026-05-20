@@ -55,7 +55,15 @@ if [ "$EUID" -ne 0 ]; then
     error "This script must be run as root. Use: sudo bash deploy.sh"
 fi
 
-# Generate secure database password if not provided
+# Generate secure database password if not provided (try loading existing first)
+if [ -z "$DB_PASSWORD" ]; then
+    if [ -f "/root/.digiprojects-db-pass" ]; then
+        DB_PASSWORD=$(grep '^DB_PASSWORD=' /root/.digiprojects-db-pass | cut -d '=' -f2-)
+    elif [ -f "$PROJECT_PATH/digiprojects-backend/.env" ]; then
+        DB_PASSWORD=$(grep '^DB_PASSWORD=' "$PROJECT_PATH/digiprojects-backend/.env" | cut -d '=' -f2-)
+    fi
+fi
+
 if [ -z "$DB_PASSWORD" ]; then
     DB_PASSWORD=$(openssl rand -base64 32)
 fi
@@ -143,14 +151,25 @@ systemctl enable mysql
 success "MySQL service running"
 
 log "Creating database and user..."
-mysql -u root <<MYSQL_COMMANDS
+# Define the SQL commands
+SQL_COMMANDS=$(cat <<MYSQL_COMMANDS
 CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD';
 GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'localhost';
 FLUSH PRIVILEGES;
 MYSQL_COMMANDS
+)
 
-success "Database and user created"
+# Attempt to execute using different socket paths
+if ! echo "$SQL_COMMANDS" | mysql -u root 2>/dev/null; then
+    if ! echo "$SQL_COMMANDS" | mysql --socket=/var/run/mysqld/mysqld.sock -u root 2>/dev/null; then
+        if ! echo "$SQL_COMMANDS" | mysql --socket=/var/lib/mysql/mysql.sock -u root 2>/dev/null; then
+            warning "Could not connect to MySQL to create database/user. If they already exist, this is safe to ignore."
+        fi
+    fi
+fi
+
+success "Database setup step finished"
 
 ##############################################################################
 # STEP 4: Backend Setup
