@@ -17,7 +17,7 @@ NC='\033[0m'
 
 # Configuration
 DOMAIN="digiprojects.co.ke"
-PROJECT_PATH="/var/www/digiprojects"
+PROJECT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DB_NAME="digiprojects"
 DB_USER="digiprojects_user"
 APP_ENV="production"
@@ -394,6 +394,9 @@ server {
 }
 NGINX_CONFIG
 
+# Replace hardcoded paths with dynamic PROJECT_PATH in Nginx config
+sed -i "s|/var/www/digiprojects|$PROJECT_PATH|g" /etc/nginx/sites-available/digiprojects
+
 success "Unified Nginx config created"
 
 log "Enabling Nginx sites..."
@@ -464,6 +467,9 @@ RestartSec=10
 WantedBy=multi-user.target
 QUEUE_SERVICE
 
+# Replace hardcoded paths in systemd service file
+sed -i "s|/var/www/digiprojects|$PROJECT_PATH|g" /etc/systemd/system/digiprojects-queue.service
+
 systemctl daemon-reload
 systemctl enable digiprojects-queue.service
 log "Queue worker service created"
@@ -496,6 +502,9 @@ find $BACKUP_DIR -name "*.gz" -mtime +30 -delete
 
 echo "Backup completed at $DATE"
 BACKUP_SCRIPT
+
+# Replace hardcoded paths in backup script
+sed -i "s|/var/www/digiprojects|$PROJECT_PATH|g" /usr/local/bin/backup-digiprojects.sh
 
 chmod +x /usr/local/bin/backup-digiprojects.sh
 success "Backup script created"
