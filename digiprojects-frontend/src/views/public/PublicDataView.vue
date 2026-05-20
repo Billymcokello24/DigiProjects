@@ -20,46 +20,54 @@ const fetchCountyData = async () => {
   try {
     loading.value = true
     const response = await api.get('/public/counties-summary')
-    nationalStats.value = response.data.national_stats
-    counties.value = response.data.counties
-    recentUpdates.value = response.data.recent_updates || []
-    regions.value = response.data.regions || []
-    phases.value = response.data.phases || []
-    projectsPhases.value = response.data.projects_phases || []
+    nationalStats.value = response.data?.national_stats || null
+    counties.value = response.data?.counties || []
+    recentUpdates.value = response.data?.recent_updates || []
+    regions.value = response.data?.regions || []
+    phases.value = response.data?.phases || []
+    projectsPhases.value = response.data?.projects_phases || []
     console.log('Fetched National Stats:', nationalStats.value)
-    console.log('Fetched Counties:', counties.value.length)
-    console.log('Fetched Regions:', regions.value.length)
-    console.log('Fetched Phases:', phases.value.length)
-    console.log('Fetched Projects with Phases:', projectsPhases.value.length)
+    console.log('Fetched Counties:', counties.value?.length || 0)
+    console.log('Fetched Regions:', regions.value?.length || 0)
+    console.log('Fetched Phases:', phases.value?.length || 0)
+    console.log('Fetched Projects with Phases:', projectsPhases.value?.length || 0)
   } catch (err) {
     console.error('Failed to fetch county data:', err)
+    counties.value = []
+    recentUpdates.value = []
+    regions.value = []
+    phases.value = []
+    projectsPhases.value = []
   } finally {
     loading.value = false
   }
 }
 
-const availableCounties = computed(() => counties.value.map(c => c.name))
+const availableCounties = computed(() => (counties.value || []).map(c => c.name))
 
 const regionalStats = computed(() => {
   const groupedByRegion = {}
-  counties.value.forEach(county => {
-    if (!groupedByRegion[county.region]) {
-      groupedByRegion[county.region] = {
-        region: county.region,
-        activeProjects: 0,
-        completion: 0,
-        lastUpdate: 'Recently',
-        status: 'success',
-        counties: []
+  const countiesList = counties.value || []
+  countiesList.forEach(county => {
+    if (county && county.region) {
+      if (!groupedByRegion[county.region]) {
+        groupedByRegion[county.region] = {
+          region: county.region,
+          activeProjects: 0,
+          completion: 0,
+          lastUpdate: 'Recently',
+          status: 'success',
+          counties: []
+        }
       }
+      groupedByRegion[county.region].activeProjects += county.stats?.total_projects || 0;
+      groupedByRegion[county.region].counties.push(county)
     }
-    groupedByRegion[county.region].activeProjects += county.stats.total_projects
-    groupedByRegion[county.region].counties.push(county)
   })
   
   return Object.values(groupedByRegion).map(region => {
-    const totalSubmissions = region.counties.reduce((sum, c) => sum + c.stats.total_submissions, 0)
-    const completedSubmissions = region.counties.reduce((sum, c) => sum + c.stats.completed, 0)
+    const totalSubmissions = region.counties.reduce((sum, c) => sum + (c.stats?.total_submissions || 0), 0)
+    const completedSubmissions = region.counties.reduce((sum, c) => sum + (c.stats?.completed || 0), 0)
     const completion = totalSubmissions > 0 ? Math.round((completedSubmissions / totalSubmissions) * 100) : 0
     
     return {
@@ -78,7 +86,7 @@ const currentTableData = computed(() => {
 })
 
 const selectCounty = (countyName) => {
-  const county = counties.value.find(c => c.name === countyName)
+  const county = (counties.value || []).find(c => c.name === countyName)
   if (county) {
     selectedCounty.value = county
     selectedFilter.value = countyName
@@ -107,11 +115,14 @@ const getStatusBadge = (status) => {
 
 const projectsTable = computed(() => {
   const grouped = {}
-  projectsPhases.value.forEach(item => {
-    if (!grouped[item.site]) {
-      grouped[item.site] = []
+  const items = projectsPhases.value || []
+  items.forEach(item => {
+    if (item && item.site) {
+      if (!grouped[item.site]) {
+        grouped[item.site] = []
+      }
+      grouped[item.site].push(item.phase)
     }
-    grouped[item.site].push(item.phase)
   })
   
   return Object.entries(grouped).map(([site, phases]) => ({
