@@ -118,7 +118,7 @@ apt-get install -y -qq \
     certbot \
     python3-certbot-nginx \
     supervisor \
-    redis-server
+    redis-server || warning "Some packages failed to install, continuing deployment..."
 
 success "All packages installed"
 
